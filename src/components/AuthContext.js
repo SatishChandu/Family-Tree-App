@@ -5,7 +5,7 @@ const AuthContext = createContext(undefined);
 export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [email, setEmail] = useState(undefined);
-    const [role, setRole] = useState(undefined); // Add role state
+    const [role, setRole] = useState(undefined); 
 
     const login = (email, password) => {
         const storedUser = JSON.parse(localStorage.getItem('user'));
@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const signup = (newUser) => {
-        localStorage.setItem('user', JSON.stringify(newUser)); // Save user in localStorage
+        localStorage.setItem('user', JSON.stringify(newUser)); 
         setEmail(newUser.email);
         setRole(newUser.role);
         setIsAuthenticated(true);

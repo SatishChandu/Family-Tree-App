@@ -96,6 +96,10 @@
   gap: 20px;
 }
 
+.btn-submit {
+  text-align: center;
+}
+
 @media (min-width: 768px) {
   .img-container, .add-family h3 {
     grid-template-columns: 2fr 1fr;

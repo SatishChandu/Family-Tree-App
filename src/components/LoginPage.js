@@ -13,6 +13,7 @@ const LoginPage = () => {
     const [signupPassword, setSignupPassword] = useState('');
     const [signupRole, setSignupRole] = useState('user');
     const [signupError, setSignupError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     const navigate = useNavigate();
     const { login, signup } = useAuth();
@@ -23,8 +24,13 @@ const LoginPage = () => {
             setTimeout(() => setLoginError(''), 3000);
             return;
         }
-        login(email, password);
-        navigate('/landingpage');
+        try {
+            login(email, password);
+            navigate('/landingpage');
+        } catch (error) {
+            setLoginError("Invalid credentials");
+            setTimeout(() => setLoginError(''), 3000);
+        }
     };
 
     const handleSignupSubmit = () => {
@@ -33,9 +39,18 @@ const LoginPage = () => {
             setTimeout(() => setSignupError(''), 3000);
             return;
         }
-        signup({ email: signupEmail, password: signupPassword, role: signupRole });
-        setShowSignupModal(false);
-        navigate('/landingpage');
+        try {
+            signup({ email: signupEmail, password: signupPassword, role: signupRole });
+            setShowSignupModal(false);
+            setSuccessMessage("Signup successful! You can now log in.");
+            setTimeout(() => {
+                setSuccessMessage('');
+                navigate('/');
+            }, 3000);
+        } catch (error) {
+            setSignupError(error.message);
+            setTimeout(() => setSignupError(''), 3000);
+        }
     };
 
     return (
@@ -44,11 +59,13 @@ const LoginPage = () => {
           <h3 className='text-center mb-3'>Welcome to the Family Tree App</h3>
             <h4>Login/Signup</h4>
             {loginError && <Alert variant="danger">{loginError}</Alert>}
+            {successMessage && <Alert variant="success">{successMessage}</Alert>}
             <Form.Group>
                 <Form.Label>Email</Form.Label>
                 <Form.Control
                     type="email"
                     placeholder="Enter email"
+                    className='mb-3'
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                 />
@@ -74,6 +91,7 @@ const LoginPage = () => {
                     <Form.Group>
                         <Form.Label>Email</Form.Label>
                         <Form.Control
+                            className='mb-3'
                             type="email"
                             placeholder="Enter email"
                             value={signupEmail}
@@ -83,6 +101,7 @@ const LoginPage = () => {
                     <Form.Group>
                         <Form.Label>Password</Form.Label>
                         <Form.Control
+                            className='mb-3'
                             type="password"
                             placeholder="Enter password"
                             value={signupPassword}

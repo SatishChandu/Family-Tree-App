@@ -18,8 +18,8 @@ const LandingPage = () => {
     <>
       <div className="landing-page">
         <div className="logout-button">
-            <Button variant="dark" onClick={handleLogout}>Logout</Button>
-          </div>
+          <Button variant="dark" onClick={handleLogout}>Logout</Button>
+        </div>
         <div className="img-container">
           <div className="bg-img">
             <img src={familyTreeImg} alt="familyImg" width="1024" height="786" />
