@@ -1,25 +1,42 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from '../src/components/AuthContext';
+import LoginPage from './components/LoginPage';
+import LandingPage from './components/LandingPage';
+import HomePage from './components/HomePage';
+import PrivateRoute from '../src/components/PrivateRoute';
+import AdminPage from './components/AdminPage';
+import SuperAdminPage from './components/SuperAdminPage';
+
+function RoleBasedRoute({ children, requiredRole }) {
+    const { role } = useAuth();
+    return role === requiredRole ? children : <Navigate to="/" />;
+}
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    return (
+        <AuthProvider>
+            <Router>
+                <Routes>
+                    <Route path="/" element={<LoginPage />} />
+                    <Route path="/landingpage" element={<PrivateRoute><LandingPage /></PrivateRoute>} />
+                    <Route path="/home" element={<PrivateRoute><HomePage /></PrivateRoute>} />
+
+                    {/* Role-based routes */}
+                    <Route path="/admin" element={
+                        <RoleBasedRoute requiredRole="admin">
+                            <AdminPage />
+                        </RoleBasedRoute>
+                    } />
+                    <Route path="/superadmin" element={
+                        <RoleBasedRoute requiredRole="superadmin">
+                            <SuperAdminPage />
+                        </RoleBasedRoute>
+                    } />
+                </Routes>
+            </Router>
+        </AuthProvider>
+    );
 }
 
 export default App;
