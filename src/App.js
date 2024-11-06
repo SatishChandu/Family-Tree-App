@@ -7,6 +7,7 @@ import HomePage from './components/HomePage';
 import PrivateRoute from '../src/components/PrivateRoute';
 import AdminPage from './components/AdminPage';
 import SuperAdminPage from './components/SuperAdminPage';
+import DataView from './components/DataView';
 
 function RoleBasedRoute({ children, requiredRole }) {
     const { role } = useAuth();
@@ -21,6 +22,7 @@ function App() {
                     <Route path="/" element={<LoginPage />} />
                     <Route path="/landingpage" element={<PrivateRoute><LandingPage /></PrivateRoute>} />
                     <Route path="/home" element={<PrivateRoute><HomePage /></PrivateRoute>} />
+                    <Route path="/view-data" element={<PrivateRoute><DataView /></PrivateRoute>} />
 
                     {/* Role-based routes */}
                     <Route path="/admin" element={

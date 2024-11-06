@@ -3,6 +3,7 @@ import { Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import familyTreeImg from "../assets/img/family-tree-img.jpg";
 import "../App.css";
+import DataView from "./DataView";
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -31,6 +32,9 @@ const LandingPage = () => {
             </div>
           </div>
         </div>
+      </div>
+      <div>
+        <DataView />
       </div>
     </>
   );

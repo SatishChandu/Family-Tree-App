@@ -28,18 +28,47 @@ export const isFirstUser = () => {
     return users.length === 0;
 };
 
-let familyData = {};
-let personData = {};
+let familyData = [];
+let personData = [];
 
 export const saveFamilyData = (data) => {
-    familyData = data;
+    familyData.push(data);
     console.log("Family data saved:", familyData);
 };
 
 export const savePersonData = (data) => {
-    personData = data;
+    personData.push(data);
     console.log("Person data saved:", personData);
 };
 
 export const getFamilyData = () => familyData;
 export const getPersonData = () => personData;
+
+export const getFamilyDataById = (id) => {
+    const familyData = getFamilyData();
+    return familyData.find(data => data.id === id);
+};
+
+export const getPersonDataById = (id) => {
+    const personData = getPersonData();
+    return personData.find(data => data.id === id);
+};
+export const deleteFamilyData = (id) => {
+    familyData = familyData.filter(data => data.id !== id);
+    console.log("Family data after deletion:", familyData);
+    return familyData;
+};
+
+export const deletePersonData = (id) => {
+    personData = personData.filter(data => data.id !== id);
+    console.log("Person data after deletion:", personData);
+    return personData;
+};
+
+export const clearFamilyData = () => {
+    localStorage.removeItem('familyData');
+};
+
+export const clearPersonData = () => {
+    localStorage.removeItem('personData');
+};
