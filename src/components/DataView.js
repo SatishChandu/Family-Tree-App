@@ -160,7 +160,7 @@
 
 // export default DataView;
 
-//Tree representation
+//Tree Representation
 import React, { useState, useEffect } from 'react';
 import { getFamilyData, getPersonData } from '../Util';
 import { Container, Card } from 'react-bootstrap';
@@ -169,6 +169,7 @@ import '../App.css';
 
 const DataView = () => {
     const [treeData, setTreeData] = useState([]);
+    const [expandedNodes, setExpandedNodes] = useState(new Set());
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const containerRef = React.useRef(null);
 
@@ -176,105 +177,148 @@ const DataView = () => {
         const familyData = getFamilyData();
         const personData = getPersonData();
 
-        const dataTree = familyData.map(family => ({
-            name: `Family ID: ${family.id}`,
-            attributes: {
-                Surname: family.surname,
-                Gothram: family.gothram,
-                Origin: family.origin,
-            },
-            children: personData
-                .filter(person => person.familyId === family.id)
-                .map(person => ({
-                    name: `${person.firstName} ${person.middleName}`,
-                    attributes: {
-                        Gender: person.gender,
-                        DOB: person.dateOfBirth,
-                        Father: person.fatherName,
-                        Mother: person.motherName,
-                        Occupation: person.occupation,
-                        "Marital Status": person.maritalStatus,
-                    },
-                    children: person.siblings.map((sibling, index) => ({
-                        name: `Sibling ${index + 1}: ${sibling}`,
+        const dataTree = familyData.map(family => {
+            const personInfo = personData.find(person => person.familyId === family.id);
+            if (!personInfo) return null;
+
+            // Start with the "Me" node
+            const meNode = {
+                name: `${personInfo.firstName} ${personInfo.middleName || ''}`,
+                attributes: {
+                    Gender: personInfo.gender,
+                    DOB: personInfo.dateOfBirth,
+                    Occupation: personInfo.occupation,
+                    "Marital Status": personInfo.maritalStatus,
+                    "Address": personInfo.address
+                },
+                children: []
+            };
+
+            // Add siblings at the same level
+            if (expandedNodes.has('siblings')) {
+                meNode.children = [
+                    ...(personInfo.siblings || []).map((sibling) => ({
+                        name: sibling,
+                        attributes: {
+                            Relationship: 'Sibling'
+                        }
                     }))
-                }))
-        }));
+                ];
+            }
+
+            // Add parents if expanded
+            if (expandedNodes.has('parents')) {
+                const parentsNodes = [
+                    {
+                        name: personInfo.fatherName || 'Father',
+                        attributes: {
+                            Relationship: 'Father'
+                        },
+                        children: expandedNodes.has('grandparents') ? [
+                            {
+                                name: personInfo.grandFatherName || 'Grandfather',
+                                attributes: {
+                                    Relationship: 'Grandfather'
+                                }
+                            },
+                            {
+                                name: personInfo.grandMotherName || 'Grandmother',
+                                attributes: {
+                                    Relationship: 'Grandmother'
+                                }
+                            }
+                        ] : []
+                    },
+                    {
+                        name: personInfo.motherName || 'Mother',
+                        attributes: {
+                            Relationship: 'Mother'
+                        }
+                    }
+                ];
+                meNode.children.unshift(...parentsNodes);
+            }
+
+            return meNode;
+        }).filter(Boolean);
 
         setTreeData(dataTree);
-    }, []);
-
-    useEffect(() => {
-        const updateDimensions = () => {
-            if (containerRef.current) {
-                setDimensions({
-                    width: containerRef.current.offsetWidth,
-                    height: window.innerHeight * 0.8
-                });
-            }
-        };
-
-        window.addEventListener('resize', updateDimensions);
-        updateDimensions();
-
-        return () => window.removeEventListener('resize', updateDimensions);
-    }, []);
+    }, [expandedNodes]);
 
     const renderNodeWithCustomLabel = ({ nodeDatum, toggleNode }) => {
-        const isFamily = nodeDatum.name.includes('Family ID:');
-        const isPerson = nodeDatum.attributes?.Gender;
-        const isSibling = nodeDatum.name.includes('Sibling');
-
         const getNodeStyle = () => {
-            if (isFamily) return { fill: '#4A90E2', stroke: '#2171C7' };
-            if (isPerson) return { fill: '#50C878', stroke: '#2E8B57' };
+            if (nodeDatum.attributes?.Relationship === 'Grandfather' || 
+                nodeDatum.attributes?.Relationship === 'Grandmother') {
+                return { fill: '#800080', stroke: '#4B0082' };
+            }
+            if (nodeDatum.attributes?.Relationship === 'Father' || 
+                nodeDatum.attributes?.Relationship === 'Mother') {
+                return { fill: '#50C878', stroke: '#2E8B57' };
+            }
+            if (nodeDatum.attributes?.Relationship === 'Sibling') {
+                return { fill: '#FFA500', stroke: '#FF8C00' };
+            }
             return { fill: '#FF7F50', stroke: '#FF6347' };
         };
 
-        const getTextColor = () => {
-            if (isFamily) return '#1a365d';
-            if (isPerson) return '#1a4731';
-            return '#7c2d12';
+        const handleNodeClick = () => {
+            const nodeType = getNodeType(nodeDatum);
+            if (nodeType) {
+                setExpandedNodes(prev => {
+                    const newSet = new Set(prev);
+                    if (newSet.has(nodeType)) {
+                        newSet.delete(nodeType);
+                    } else {
+                        newSet.add(nodeType);
+                    }
+                    return newSet;
+                });
+            }
+            toggleNode();
+        };
+
+        const getNodeType = (node) => {
+            if (!node.attributes?.Relationship) return 'parents';
+            if (node.attributes?.Relationship === 'Father') return 'grandparents';
+            if (node.attributes?.Relationship === 'Sibling') return 'siblings';
+            return null;
         };
 
         return (
             <g className="node-container">
-                {/* Node circle with hover effect */}
                 <circle
-                    r={isFamily ? 20 : isPerson ? 18 : 15}
+                    r={15}
                     {...getNodeStyle()}
                     className="node-circle"
-                    onClick={toggleNode}
+                    onClick={handleNodeClick}
                     style={{
                         cursor: 'pointer',
                         filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.2))',
                     }}
                 />
 
-                {/* Node content */}
                 <foreignObject
-                    width="200"
-                    height="200"
-                    x="25"
-                    y="-50"
+                    width={250}
+                    height="180"
+                    x="20"
+                    y="-45"
                     style={{ overflow: 'visible' }}
                 >
                     <div style={{ 
                         background: 'white',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                         border: '1px solid #e5e7eb',
-                        fontSize: isFamily ? '14px' : '12px',
-                        color: getTextColor(),
-                        maxWidth: '180px'
+                        fontSize: '12px',
+                        maxWidth: '235px'
                     }}>
                         <strong>{nodeDatum.name}</strong>
                         {nodeDatum.attributes && (
-                            <div style={{ marginTop: '4px' }}>
+                            <div style={{ marginTop: '3px' }}>
                                 {Object.entries(nodeDatum.attributes).map(([key, value], i) => (
                                     <div key={i} style={{ 
-                                        fontSize: '11px',
+                                        fontSize: '10px',
                                         color: '#666',
                                         marginTop: '2px'
                                     }}>
@@ -289,29 +333,35 @@ const DataView = () => {
         );
     };
 
-    // Custom styles for the tree
-    const customStyles = {
-        nodes: {
-            node: {
-                circle: {
-                    fill: '#fff',
-                },
-                attributes: {
-                    stroke: '#fff',
-                },
-            },
-        },
-        links: {
-            stroke: '#919191',
-            strokeWidth: 2,
-        },
-    };
+    useEffect(() => {
+        const updateDimensions = () => {
+            if (containerRef.current) {
+                setDimensions({
+                    width: containerRef.current.offsetWidth,
+                    height: window.innerHeight * 0.85
+                });
+            }
+        };
+
+        window.addEventListener('resize', updateDimensions);
+        updateDimensions();
+
+        return () => window.removeEventListener('resize', updateDimensions);
+    }, []);
 
     return (
-        <Container fluid className="py-4" ref={containerRef}>
+        <Container fluid className="py-3" ref={containerRef}>
             <Card className="shadow-sm">
-                <Card.Header className="bg-white">
-                    <h3 className="mb-0">Family and Person Hierarchy</h3>
+                <Card.Header className="bg-white d-flex justify-content-between align-items-center">
+                    <h3 className="mb-0">Family Tree</h3>
+                    <div className="d-flex gap-2">
+                        <div className="d-flex align-items-center">
+                            <span className="badge rounded-pill" style={{ backgroundColor: '#800080' }}>Grandparents</span>
+                            <span className="badge rounded-pill bg-success mx-2">Parents</span>
+                            <span className="badge rounded-pill" style={{ backgroundColor: '#FFA500' }}>Siblings</span>
+                            <span className="badge rounded-pill" style={{ backgroundColor: '#FF7F50' }}>Me</span>
+                        </div>
+                    </div>
                 </Card.Header>
                 <Card.Body className="p-0">
                     <div style={{ width: '100%', height: dimensions.height }}>
@@ -323,22 +373,22 @@ const DataView = () => {
                                 pathFunc="step"
                                 translate={{ 
                                     x: dimensions.width / 2, 
-                                    y: 50 
+                                    y: dimensions.height - 100
                                 }}
-                                separation={{ siblings: 2, nonSiblings: 2.5 }}
+                                separation={{ siblings: 1.5, nonSiblings: 2 }}
                                 zoom={0.8}
                                 enableLegacyTransitions={true}
                                 transitionDuration={800}
-                                styles={customStyles}
-                                nodeSize={{ x: 250, y: 150 }}
+                                nodeSize={{ x: 220, y: 130 }}
                                 zoomable={true}
                                 draggable={true}
+                                scaleExtent={{ min: 0.4, max: 1.5 }}
                             />
                         ) : (
                             <div className="d-flex align-items-center justify-content-center h-100">
                                 <div className="text-center text-muted">
-                                    <h5>No Data Available</h5>
-                                    <p className="mb-0">Add family and person records to view the hierarchy.</p>
+                                    <h5>No Family Tree Data Available</h5>
+                                    <p className="mb-0">Add family records to view the complete family tree.</p>
                                 </div>
                             </div>
                         )}
